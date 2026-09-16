@@ -35,7 +35,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/ems-frontend:latest
 
-            - name: Deploy to EC2 via SSH
+      - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
