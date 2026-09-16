@@ -35,7 +35,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/ems-frontend:latest
 
-      - name: Deploy to EC2 via SSH
+            - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -43,22 +43,23 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd ~/event-management-system
 
-            # Create .env file on EC2
+            if [ ! -d "$HOME/event-management-system/.git" ]; then
+              git clone https://github.com/saijavvaji-DevOps/event-management-system.git "$HOME/event-management-system"
+            fi
+
+            cd "$HOME/event-management-system"
+            git fetch origin main
+            git reset --hard origin/main
+
             cat > .env <<EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
             MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
             MYSQL_USER=${{ secrets.MYSQL_USER }}
             MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
             EOF
 
-            # Stop existing containers if any
-            docker compose down || true
-
-            # Pull base images and rebuild
-            docker compose pull
-            docker compose up -d --build
-
-            # Show running containers
-            docker compose ps
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml ps
